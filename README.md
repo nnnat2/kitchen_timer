@@ -1,6 +1,6 @@
-# kitchen_timer_app
+# キッチンタイマーEASY
 
-A new Flutter project.
+簡単に使えるキッチンタイマーです。
 
 ## Getting Started
 
