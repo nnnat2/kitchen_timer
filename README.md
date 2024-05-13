@@ -1,5 +1,5 @@
 # キッチンタイマーEASY
-[キッチンタイマーEASY](https://play.google.com/store/apps/details?id=com.easy.kitchen.timer.app)  
+[キッチンタイマーEASY](https://play.google.com/store/apps/details?id=com.easy.kitchen.timer.app&pli=1)  
 
 簡単に使えるキッチンタイマーです。  
 pickerで時間を設定しタイマーを開始します。  
