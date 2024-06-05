@@ -1,16 +1,32 @@
-# kitchen_timer_app
+# キッチンタイマーEASY
+[キッチンタイマーEASY](https://play.google.com/store/apps/details?id=com.easy.kitchen.timer.app&pli=1)  
 
-A new Flutter project.
+簡単に使えるキッチンタイマーです。  
+pickerで時間を設定しタイマーを開始します。  
+タイマーが終了すると音が鳴り、ローカル通知が来ます。  
+設定した時刻とタイマー終了時のアラーム音のON/OFFを初期設定として保存できます。  
 
-## Getting Started
+## 作ろうと思ったきっかけ
+AndroidスマホにプリインストールされているGoogle製の「時計」アプリのタイマー機能が使いにくいと感じたため。  
+(時間の入力方法が独特で、時間、分、秒を個別に設定できない)  
+  
+![altテキスト](https://appllio.com/sites/default/files/styles/portrait_xl_1/public/2022/08/05/r-2208-android-set-timer-4.jpg)  
+3分間のタイマーを設定したい場合、「300」と入力しなければならない
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 使用パッケージ
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **flutter_picker**  
+- **shared_preferences**  
+- **flutter_local_notifications**  
+- **audioplayer**  
+- **change_app_package_name**  
+- **flutter_launcher_icon**  
+
+## 苦労した点
+- flutter_local_notificationsパッケージを使用してローカル通知を飛ばす仕組みの実装  
+公式ドキュメントの理解に時間がかかった。  
+- Timerクラスの使用  
+  タイマー開始/停止ボタンを1秒以内に連打するとTimerクラスの特性上挙動がおかしくなってしまうため、  
+  ボタンを押したときに1秒間のインターバルを設定した。
