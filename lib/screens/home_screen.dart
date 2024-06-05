@@ -6,7 +6,7 @@ import 'package:flutter_picker/flutter_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'local_notification.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,85 +15,120 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
-  DateTime _timerTime = DateTime.utc(0, 0, 0);
-  late DateTime _firstTimerTime;
-  Timer? _countDownTime;
-  bool _isDisabledButton = false;
-  String _saveDateString = '00';
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  TimerInfomation timerInfomation = TimerInfomation(
+    countTimerTime: Timer(Duration.zero, () {}),
+    timerDateTime: DateTime.utc(0, 0, 0),
+    firstTimerTime: DateTime.utc(0, 0, 0),
+    saveDateString: '00',
+  );
+
+  List<TimerInfomation> _timers = [];
+  int _timerCount = 1;
+
+  // late DateTime _firstTimerTimeCommon;
+  // String _saveDateStringCommon = '00';
+
   bool _switchValue = true;
+  bool _isDisabledButton = false;
 
-  final player = AudioPlayer();
+  late AudioPlayer _audioPlayer;
 
 
-  // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  // FlutterLocalNotificationsPlugin();
-  // bool _notificationsEnabled = false;
 
-  late final _controller = AnimationController(
-    duration: const Duration(milliseconds: 300),
-    vsync: this,
+  late final _controllers = List<AnimationController>.generate(
+    5,
+    (index) => AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    ),
   );
 
   @override
   void initState() {
     super.initState();
-    _loadDateTime();
+    _audioPlayer = AudioPlayer();
+    _loadAudio();
+
+    _loadAllFirstTime();
     _loadBool();
     LocalNotification().requestPermissions();
-    player.setReleaseMode(ReleaseMode.release);
-
+    // player.setReleaseMode(ReleaseMode.release);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    for (var controller in _controllers) {
+      controller.dispose();
+    }
+    _audioPlayer.dispose();
     super.dispose();
-    _countDownTime?.cancel();
+    //_countDownTimeCommon?.cancel();
   }
 
-  void _displayPicker() {
+  void _displayPicker(BuildContext context, int index) {
     Picker(
       adapter: DateTimePickerAdapter(
         type: PickerDateTimeType.kHMS,
-        value: _timerTime,
+        value: _timers[index].timerDateTime,
         customColumnType: [3, 4, 5],
       ),
       confirmText: "OK",
-      selectedTextStyle: TextStyle(color: Colors.cyan),
+      selectedTextStyle: TextStyle(color: Colors.green),
       onConfirm: (Picker picker, List value) {
         setState(() {
-          _timerTime = DateTime.utc(0, 0, 0, value[0], value[1], value[2]);
+          _timers[index].timerDateTime =
+              DateTime.utc(0, 0, 0, value[0], value[1], value[2]);
         });
-        _firstTimerTime = _timerTime;
-        _saveDateTime();
+        _timers[index].firstTimerTime = _timers[index].timerDateTime;
+        _saveDateTime(index);
       },
     ).showModal(context);
   }
 
-  void _startTimer() {
-    _countDownTime = Timer.periodic(
+  void _addTimer() {
+    setState(() {
+      if (_timers.length < 5) {
+        _timers.add(TimerInfomation(
+          countTimerTime: Timer(Duration.zero, () {}),
+          timerDateTime: DateTime.utc(0, 0, 0),
+          firstTimerTime: DateTime.utc(0, 0, 0),
+          saveDateString: '00',
+        ));
+        _timerCount = _timers.length;
+        _saveTimerCount();
+      }
+    });
+  }
+
+  void _startTimer(int index) {
+    _timers[index].countTimerTime = Timer.periodic(
       Duration(seconds: 1),
       (Timer timer) {
         setState(() {
-          _timerTime = _timerTime.add(Duration(seconds: -1));
-          _timeEnd();
+          _timers[index].timerDateTime =
+              _timers[index].timerDateTime.add(Duration(seconds: -1));
+          _timeEnd(index);
         });
       },
     );
   }
 
-  void _timeEnd() {
-    if (_countDownTime != null && _timerTime == DateTime.utc(0, 0, 0)) {
+  void _timeEnd(int index) {
+
+    if (_timers[index].timerDateTime == DateTime.utc(0, 0, 0)) {
       LocalNotification().showNotification();
-      if (_switchValue == true){
-        player.play (AssetSource("ktimer.mp3"));
-      }
-      _controller.reverse();
-      _countDownTime?.cancel();
+      _playSound();
+      _controllers[index].reverse();
+      _timers[index].countTimerTime.cancel();
     }
   }
+
+  Future<void> _playSound() async{
+    if (_switchValue == true) {
+     await _audioPlayer.play();
+    }
+}
 
   void _buttonDelay() async {
     _isDisabledButton = true;
@@ -103,24 +138,55 @@ class _HomeScreenState extends State<HomeScreen>
     _isDisabledButton = false;
   }
 
-  void _resetButton() {
+  void _resetButton(int index) {
     setState(() {
-      _timerTime = _firstTimerTime;
+      _timers[index].timerDateTime = _timers[index].firstTimerTime;
+      // var firstTimerTime = _timers[index].firstTimerTime;
+      // _timers[index].firstTimerTime = firstTimerTime;
     });
   }
 
-  void _saveDateTime() async {
-    _saveDateString = _firstTimerTime.toString();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('dateTime', _saveDateString);
+  Future<void> _loadAudio() async {
+    await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
   }
 
-  void _loadDateTime() async {
+  Future<void> _saveTimerCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _saveDateString = prefs.getString('dateTime') ?? '00:00:30';
-    _firstTimerTime = DateTime.parse(_saveDateString);
-    _timerTime = _firstTimerTime;
+    prefs.setInt('timer_count', _timerCount);
+  }
+
+  Future<void> _loadTimerCount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _timerCount = prefs.getInt('timer_count') ?? 1;
+  }
+
+  Future<void> _saveDateTime(int index) async {
+    _timers[index].saveDateString = _timers[index].firstTimerTime.toString();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('timer_$index', _timers[index].saveDateString);
+  }
+
+  Future<void> _loadDateTime(int index) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _timers[index].saveDateString = prefs.getString('timer_$index') ?? '00:00:30';
+    _timers[index].firstTimerTime =
+        DateTime.parse(_timers[index].saveDateString);
+    _timers[index].timerDateTime = _timers[index].firstTimerTime;
     setState(() {});
+  }
+
+  Future<void> _loadAllFirstTime() async {
+    await _loadTimerCount();
+    _timers = List.generate(_timerCount, (index) => TimerInfomation(
+        countTimerTime: Timer(Duration.zero, () {}),
+        timerDateTime: DateTime.utc(0, 0, 0),
+        firstTimerTime: DateTime.utc(0, 0, 0),
+        saveDateString: '00',
+    ),
+    );
+    for (int i = 0; i < 5; i++) {
+      await _loadDateTime(i);
+    }
   }
 
   void _saveBool() async {
@@ -142,34 +208,37 @@ class _HomeScreenState extends State<HomeScreen>
           child: Column(
             children: [
               Expanded(
-                child: ListView(
-                  children: [
-                    Row(
+                child: ListView.builder(
+                  itemCount: _timers.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return Row(
                       children: <Widget>[
                         TextButton(
-                          onPressed: _displayPicker,
+                          onPressed: () => _displayPicker(context, index),
                           style: TextButton.styleFrom(
                             textStyle: TextStyle(fontSize: 60),
                           ),
-                          child: Text(DateFormat.Hms().format(_timerTime)),
+                          child: Text(DateFormat.Hms()
+                              .format(_timers[index].timerDateTime)),
                         ),
                         SizedBox(
                           child: IconButton(
                             iconSize: 65,
                             icon: AnimatedIcon(
                               icon: AnimatedIcons.play_pause,
-                              progress: _controller,
+                              progress: _controllers[index],
                             ),
                             onPressed: () {
-                              if (_timerTime != DateTime.utc(0, 0, 0) &&
+                              if (_timers[index].timerDateTime !=
+                                      DateTime.utc(0, 0, 0) &&
                                   _isDisabledButton == false) {
-                                if (_controller.isCompleted) {
-                                  _controller.reverse();
-                                  _countDownTime?.cancel();
+                                if (_controllers[index].isCompleted) {
+                                  _controllers[index].reverse();
+                                  _timers[index].countTimerTime.cancel();
                                   _buttonDelay();
                                 } else {
-                                  _controller.forward();
-                                  _startTimer();
+                                  _controllers[index].forward();
+                                  _startTimer(index);
                                   _buttonDelay();
                                 }
                               }
@@ -178,22 +247,31 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         SizedBox(
                           child: IconButton(
-                            iconSize: 30  ,
+                            iconSize: 30,
                             icon: Icon(Icons.replay),
-                            onPressed: _resetButton,
+                            onPressed: () => _resetButton(index),
                           ),
                         ),
                       ],
-                    ),
-                  ],
+                    );
+                  },
+                ),
+              ),
+              Container(
+                child: IconButton(
+                  icon: const Icon(Icons.add),
+                  iconSize: 40,
+                  onPressed: _addTimer,
                 ),
               ),
               Container(
                 alignment: Alignment.bottomCenter,
                 child: SwitchListTile(
                   activeColor: Color(0xFF00a257),
-                  title: Text("アラームサウンドを有効",
-                  style: TextStyle(color: Colors.black, fontFamily: "M_PLUS_1p_2"),
+                  title: Text(
+                    "アラームサウンドを有効",
+                    style: TextStyle(
+                        color: Colors.black, fontFamily: "M_PLUS_1p_2"),
                   ),
                   value: _switchValue,
                   onChanged: (value) {
@@ -220,4 +298,19 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
+}
+
+class TimerInfomation {
+  late Timer countTimerTime;
+  DateTime timerDateTime = DateTime.utc(0, 0, 0);
+
+  late DateTime firstTimerTime;
+  String saveDateString = '00';
+
+  TimerInfomation({
+    required this.countTimerTime,
+    required this.timerDateTime,
+    required this.firstTimerTime,
+    required this.saveDateString,
+  });
 }
