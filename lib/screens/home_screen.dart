@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _loadAudio() async {
-    await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
+    await _audioPlayer.setAsset('assets/ktimer.mp3');
   }
 
   Future<void> _saveTimerCount() async {
