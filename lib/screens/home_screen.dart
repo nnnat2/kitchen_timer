@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_picker/flutter_picker.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'local_notification.dart';
-import 'package:just_audio/just_audio.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,8 +26,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<TimerInfomation> _timers = [];
   int _timerCount = 1;
 
-  // late DateTime _firstTimerTimeCommon;
-  // String _saveDateStringCommon = '00';
 
   bool _switchValue = true;
   bool _isDisabledButton = false;
@@ -35,10 +33,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AudioPlayer _audioPlayer;
 
 
-
   late final _controllers = List<AnimationController>.generate(
     5,
-    (index) => AnimationController(
+        (index) => AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     ),
@@ -53,7 +50,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _loadAllFirstTime();
     _loadBool();
     LocalNotification().requestPermissions();
-    // player.setReleaseMode(ReleaseMode.release);
   }
 
   @override
@@ -61,9 +57,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _controllers) {
       controller.dispose();
     }
-    _audioPlayer.dispose();
+     _audioPlayer.dispose();
     super.dispose();
-    //_countDownTimeCommon?.cancel();
   }
 
   void _displayPicker(BuildContext context, int index) {
@@ -104,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _startTimer(int index) {
     _timers[index].countTimerTime = Timer.periodic(
       Duration(seconds: 1),
-      (Timer timer) {
+          (Timer timer) {
         setState(() {
           _timers[index].timerDateTime =
               _timers[index].timerDateTime.add(Duration(seconds: -1));
@@ -114,21 +109,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _timeEnd(int index) {
+  Future<void> _timeEnd(int index) async{
 
     if (_timers[index].timerDateTime == DateTime.utc(0, 0, 0)) {
-      LocalNotification().showNotification();
-      _playSound();
       _controllers[index].reverse();
       _timers[index].countTimerTime.cancel();
+      await LocalNotification().showNotification();
+      await _playSound();
     }
   }
 
   Future<void> _playSound() async{
     if (_switchValue == true) {
-     await _audioPlayer.play();
+      await _audioPlayer.play();
     }
-}
+  }
+  Future<void> _loadAudio() async {
+    await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
+  }
 
   void _buttonDelay() async {
     _isDisabledButton = true;
@@ -141,14 +139,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _resetButton(int index) {
     setState(() {
       _timers[index].timerDateTime = _timers[index].firstTimerTime;
-      // var firstTimerTime = _timers[index].firstTimerTime;
-      // _timers[index].firstTimerTime = firstTimerTime;
     });
   }
 
-  Future<void> _loadAudio() async {
-    await _audioPlayer.setAsset('assets/ktimer.mp3');
-  }
+
 
   Future<void> _saveTimerCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -166,28 +160,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     prefs.setString('timer_$index', _timers[index].saveDateString);
   }
 
-  Future<void> _loadDateTime(int index) async {
+
+  Future<void> _loadDateTime(List<TimerInfomation> tempTimers, int index) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _timers[index].saveDateString = prefs.getString('timer_$index') ?? '00:00:30';
-    _timers[index].firstTimerTime =
-        DateTime.parse(_timers[index].saveDateString);
-    _timers[index].timerDateTime = _timers[index].firstTimerTime;
-    setState(() {});
+    String? savedDateString = prefs.getString('timer_$index');
+    if (savedDateString != null) {
+      tempTimers[index].saveDateString = savedDateString;
+      tempTimers[index].firstTimerTime = DateTime.parse(savedDateString);
+      tempTimers[index].timerDateTime = tempTimers[index].firstTimerTime;
+    }
   }
 
   Future<void> _loadAllFirstTime() async {
     await _loadTimerCount();
-    _timers = List.generate(_timerCount, (index) => TimerInfomation(
+
+    List<TimerInfomation> tempTimers = List.generate(
+      _timerCount,
+          (index) => TimerInfomation(
         countTimerTime: Timer(Duration.zero, () {}),
         timerDateTime: DateTime.utc(0, 0, 0),
         firstTimerTime: DateTime.utc(0, 0, 0),
         saveDateString: '00',
-    ),
+      ),
     );
-    for (int i = 0; i < 5; i++) {
-      await _loadDateTime(i);
+
+
+    for (int i = 0; i < tempTimers.length; i++) {
+      await _loadDateTime(tempTimers, i);
     }
+
+    setState(() {
+      _timers = tempTimers;
+    });
+
   }
+
+
 
   void _saveBool() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -230,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                             onPressed: () {
                               if (_timers[index].timerDateTime !=
-                                      DateTime.utc(0, 0, 0) &&
+                                  DateTime.utc(0, 0, 0) &&
                                   _isDisabledButton == false) {
                                 if (_controllers[index].isCompleted) {
                                   _controllers[index].reverse();
@@ -292,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             style: TextStyle(color: Colors.black, fontFamily: "M_PLUS_1p"),
           ),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           toolbarHeight: 125,
         ),
       ),
@@ -303,7 +311,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 class TimerInfomation {
   late Timer countTimerTime;
   DateTime timerDateTime = DateTime.utc(0, 0, 0);
-
   late DateTime firstTimerTime;
   String saveDateString = '00';
 
