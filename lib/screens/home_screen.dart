@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _controllers) {
       controller.dispose();
     }
-    // _audioPlayer.dispose();
+     _audioPlayer.dispose();
     super.dispose();
   }
 

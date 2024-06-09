@@ -65,6 +65,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/sounds/ktimer.mp3
 
 flutter_icons:
 #  ios: true
@@ -75,9 +78,7 @@ flutter_icons:
   adaptive_icon_background: "assets/images/icon_background.png"
   adaptive_icon_foreground: "assets/images/icon_foreground.png"
 
-  # To add assets to your application, add an assets section, like this:
-  assets:
-    - assets/sounds/
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
