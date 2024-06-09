@@ -20,13 +20,18 @@ AndroidスマホにプリインストールされているGoogle製の「時計�
 - **flutter_picker**  
 - **shared_preferences**  
 - **flutter_local_notifications**  
-- **audioplayer**  
+- **just_audio**  
 - **change_app_package_name**  
 - **flutter_launcher_icon**  
 
 ## 苦労した点
 - flutter_local_notificationsパッケージを使用してローカル通知を飛ばす仕組みの実装  
 公式ドキュメントの理解に時間がかかった。  
-- Timerクラスの使用  
+- インターバルの設定  
   タイマー開始/停止ボタンを1秒以内に連打するとTimerクラスの特性上挙動がおかしくなってしまうため、  
   ボタンを押したときに1秒間のインターバルを設定した。
+
+## アップデート 
+- v1.1.0 複数タイマーの追加
+  複数のタイマーを追加しました。
+
