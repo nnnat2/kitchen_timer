@@ -26,16 +26,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<TimerInfomation> _timers = [];
   int _timerCount = 1;
 
-
   bool _switchValue = true;
   bool _isDisabledButton = false;
 
   late AudioPlayer _audioPlayer;
-
+  bool _isSoundPlaying = false;
 
   late final _controllers = List<AnimationController>.generate(
     5,
-        (index) => AnimationController(
+    (index) => AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     ),
@@ -45,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _loadAudio();
+    // _loadAudio();
 
     _loadAllFirstTime();
     _loadBool();
@@ -57,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _controllers) {
       controller.dispose();
     }
-     _audioPlayer.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -99,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _startTimer(int index) {
     _timers[index].countTimerTime = Timer.periodic(
       Duration(seconds: 1),
-          (Timer timer) {
+      (Timer timer) {
         setState(() {
           _timers[index].timerDateTime =
               _timers[index].timerDateTime.add(Duration(seconds: -1));
@@ -109,8 +108,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _timeEnd(int index) async{
-
+  Future<void> _timeEnd(int index) async {
     if (_timers[index].timerDateTime == DateTime.utc(0, 0, 0)) {
       _controllers[index].reverse();
       _timers[index].countTimerTime.cancel();
@@ -119,14 +117,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _playSound() async{
+  Future<void> _playSound() async {
     if (_switchValue == true) {
-      await _audioPlayer.play();
+      await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
+      if (_isSoundPlaying) {
+        await _audioPlayer.stop();
+        await _audioPlayer.play();
+      } else {
+        await _audioPlayer.play();
+      }
     }
+    setState(() {
+      _isSoundPlaying = true;
+    });
+
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _isSoundPlaying = false;
+        });
+      }
+    });
   }
-  Future<void> _loadAudio() async {
-    await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
-  }
+
+  // Future<void> _loadAudio() async {
+  //   await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
+  // }
 
   void _buttonDelay() async {
     _isDisabledButton = true;
@@ -141,8 +157,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _timers[index].timerDateTime = _timers[index].firstTimerTime;
     });
   }
-
-
 
   Future<void> _saveTimerCount() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -160,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     prefs.setString('timer_$index', _timers[index].saveDateString);
   }
 
-
-  Future<void> _loadDateTime(List<TimerInfomation> tempTimers, int index) async {
+  Future<void> _loadDateTime(
+      List<TimerInfomation> tempTimers, int index) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedDateString = prefs.getString('timer_$index');
     if (savedDateString != null) {
@@ -176,14 +190,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     List<TimerInfomation> tempTimers = List.generate(
       _timerCount,
-          (index) => TimerInfomation(
+      (index) => TimerInfomation(
         countTimerTime: Timer(Duration.zero, () {}),
         timerDateTime: DateTime.utc(0, 0, 0),
         firstTimerTime: DateTime.utc(0, 0, 0),
         saveDateString: '00',
       ),
     );
-
 
     for (int i = 0; i < tempTimers.length; i++) {
       await _loadDateTime(tempTimers, i);
@@ -192,10 +205,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _timers = tempTimers;
     });
-
   }
-
-
 
   void _saveBool() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -238,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                             onPressed: () {
                               if (_timers[index].timerDateTime !=
-                                  DateTime.utc(0, 0, 0) &&
+                                      DateTime.utc(0, 0, 0) &&
                                   _isDisabledButton == false) {
                                 if (_controllers[index].isCompleted) {
                                   _controllers[index].reverse();
@@ -300,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             style: TextStyle(color: Colors.black, fontFamily: "M_PLUS_1p"),
           ),
           shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           toolbarHeight: 125,
         ),
       ),
