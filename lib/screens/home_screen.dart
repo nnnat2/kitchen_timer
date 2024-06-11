@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'local_notification.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,9 +32,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   late AudioPlayer _audioPlayer;
   bool _isSoundPlaying = false;
+  
+  late final controller = SlidableController(this);
+
 
   late final _controllers = List<AnimationController>.generate(
-    5,
+    6,
     (index) => AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -82,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _addTimer() {
     setState(() {
-      if (_timers.length < 5) {
+      if (_timers.length < 6) {
         _timers.add(TimerInfomation(
           countTimerTime: Timer(Duration.zero, () {}),
           timerDateTime: DateTime.utc(0, 0, 0),
@@ -229,48 +233,68 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: ListView.builder(
                   itemCount: _timers.length,
                   itemBuilder: (BuildContext context, int index) {
-                    return Row(
-                      children: <Widget>[
-                        TextButton(
-                          onPressed: () => _displayPicker(context, index),
-                          style: TextButton.styleFrom(
-                            textStyle: TextStyle(fontSize: 60),
-                          ),
-                          child: Text(DateFormat.Hms()
-                              .format(_timers[index].timerDateTime)),
-                        ),
-                        SizedBox(
-                          child: IconButton(
-                            iconSize: 65,
-                            icon: AnimatedIcon(
-                              icon: AnimatedIcons.play_pause,
-                              progress: _controllers[index],
-                            ),
-                            onPressed: () {
-                              if (_timers[index].timerDateTime !=
-                                      DateTime.utc(0, 0, 0) &&
-                                  _isDisabledButton == false) {
-                                if (_controllers[index].isCompleted) {
-                                  _controllers[index].reverse();
-                                  _timers[index].countTimerTime.cancel();
-                                  _buttonDelay();
-                                } else {
-                                  _controllers[index].forward();
-                                  _startTimer(index);
-                                  _buttonDelay();
-                                }
-                              }
+                    return Slidable(
+                      key: UniqueKey(),
+                      endActionPane: ActionPane(
+                        extentRatio: 0.2,
+                        motion: const ScrollMotion(),
+                        children: [
+                          SlidableAction(
+                            onPressed: (context) {
+                              setState(() {
+                                _timers.removeAt(index);
+                              });
                             },
+                            backgroundColor: const Color(0xFFFE4A49),
+                            foregroundColor: Colors.white,
+                            icon: Icons.delete,
+                            label: 'Delete',
                           ),
-                        ),
-                        SizedBox(
-                          child: IconButton(
-                            iconSize: 30,
-                            icon: Icon(Icons.replay),
-                            onPressed: () => _resetButton(index),
+                        ],
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          TextButton(
+                            onPressed: () => _displayPicker(context, index),
+                            style: TextButton.styleFrom(
+                              textStyle: TextStyle(fontSize: 60),
+                            ),
+                            child: Text(DateFormat.Hms()
+                                .format(_timers[index].timerDateTime)),
                           ),
-                        ),
-                      ],
+                          SizedBox(
+                            child: IconButton(
+                              iconSize: 65,
+                              icon: AnimatedIcon(
+                                icon: AnimatedIcons.play_pause,
+                                progress: _controllers[index],
+                              ),
+                              onPressed: () {
+                                if (_timers[index].timerDateTime !=
+                                        DateTime.utc(0, 0, 0) &&
+                                    _isDisabledButton == false) {
+                                  if (_controllers[index].isCompleted) {
+                                    _controllers[index].reverse();
+                                    _timers[index].countTimerTime.cancel();
+                                    _buttonDelay();
+                                  } else {
+                                    _controllers[index].forward();
+                                    _startTimer(index);
+                                    _buttonDelay();
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            child: IconButton(
+                              iconSize: 30,
+                              icon: Icon(Icons.replay),
+                              onPressed: () => _resetButton(index),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
