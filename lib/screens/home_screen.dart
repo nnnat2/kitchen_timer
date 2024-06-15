@@ -74,14 +74,14 @@ class _HomeScreenState extends State<HomeScreen>
       _pauseTimer();
     } else if (state == AppLifecycleState.resumed) {
       _resumeTimer();
-    };
+    }
+    ;
   }
 
   void _pauseTimer() {
     for (int i = 0; i < _timers.length; i++) {
-      if(_timers[i].isActive){
-      _timers[i].pauseTime = DateTime.now();
-      // _timers[i].countTimerTime.cancel();
+      if (_timers[i].isActive) {
+        _timers[i].pauseTime = DateTime.now();
       }
     }
   }
@@ -91,7 +91,9 @@ class _HomeScreenState extends State<HomeScreen>
       if (_timers[i].isActive) {
         final pausedDuration = DateTime.now().difference(_timers[i].pauseTime);
         setState(() {
-          _timers[i].timerDateTime = _timers[i].timerDateTime.add(Duration(seconds: -pausedDuration.inSeconds));
+          _timers[i].timerDateTime = _timers[i]
+              .timerDateTime
+              .add(Duration(seconds: -pausedDuration.inSeconds));
         });
         _startTimer(i);
       }
@@ -181,7 +183,6 @@ class _HomeScreenState extends State<HomeScreen>
       }
     });
   }
-
 
   void _buttonDelay() async {
     _isDisabledButton = true;
@@ -386,9 +387,6 @@ class TimerInfomation {
   late DateTime timerDateTime;
   String saveDateString = '00';
   bool isActive = false;
-
-
-
 
   TimerInfomation({
     required this.countTimerTime,
