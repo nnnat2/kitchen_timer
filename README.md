@@ -23,6 +23,7 @@ AndroidスマホにプリインストールされているGoogle製の「時計�
 - **just_audio**  
 - **change_app_package_name**  
 - **flutter_launcher_icon**  
+- **flutter_slidable**
 
 ## 苦労した点
 - flutter_local_notificationsパッケージを使用してローカル通知を飛ばす仕組みの実装  
@@ -33,5 +34,8 @@ AndroidスマホにプリインストールされているGoogle製の「時計�
 
 ## アップデート 
 - v1.1.0 複数タイマーの追加  
-  複数のタイマーを追加しました。
+  複数のタイマーを設定できるようになりました。
+- v1.2.0 バックグラウンド対応など  
+  flutter_slidableパッケージを使用してリストの削除ができるようになりました。  
+  タイマーがバックグラウンドで動くようになりました。
 
