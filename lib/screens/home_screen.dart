@@ -16,12 +16,15 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   TimerInfomation timerInfomation = TimerInfomation(
     countTimerTime: Timer(Duration.zero, () {}),
     timerDateTime: DateTime.utc(0, 0, 0),
     firstTimerTime: DateTime.utc(0, 0, 0),
     saveDateString: '00',
+    pauseTime: DateTime.utc(0, 0, 0),
+    isActive: false,
   );
 
   List<TimerInfomation> _timers = [];
@@ -32,9 +35,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   late AudioPlayer _audioPlayer;
   bool _isSoundPlaying = false;
-  
-  late final controller = SlidableController(this);
 
+  late final controller = SlidableController(this);
 
   late final _controllers = List<AnimationController>.generate(
     6,
@@ -47,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _audioPlayer = AudioPlayer();
     // _loadAudio();
 
@@ -57,11 +60,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     for (var controller in _controllers) {
       controller.dispose();
     }
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pauseTimer();
+    } else if (state == AppLifecycleState.resumed) {
+      _resumeTimer();
+    };
+  }
+
+  void _pauseTimer() {
+    for (int i = 0; i < _timers.length; i++) {
+      if(_timers[i].isActive){
+      _timers[i].pauseTime = DateTime.now();
+      // _timers[i].countTimerTime.cancel();
+      }
+    }
+  }
+
+  void _resumeTimer() {
+    for (int i = 0; i < _timers.length; i++) {
+      if (_timers[i].isActive) {
+        final pausedDuration = DateTime.now().difference(_timers[i].pauseTime);
+        setState(() {
+          _timers[i].timerDateTime = _timers[i].timerDateTime.add(Duration(seconds: -pausedDuration.inSeconds));
+        });
+        _startTimer(i);
+      }
+    }
   }
 
   void _displayPicker(BuildContext context, int index) {
@@ -92,6 +126,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           timerDateTime: DateTime.utc(0, 0, 0),
           firstTimerTime: DateTime.utc(0, 0, 0),
           saveDateString: '00',
+          pauseTime: DateTime.utc(0, 0, 0),
+          isActive: false,
         ));
         _timerCount = _timers.length;
         _saveTimerCount();
@@ -100,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _startTimer(int index) {
+    _timers[index].isActive = true;
     _timers[index].countTimerTime = Timer.periodic(
       Duration(seconds: 1),
       (Timer timer) {
@@ -116,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_timers[index].timerDateTime == DateTime.utc(0, 0, 0)) {
       _controllers[index].reverse();
       _timers[index].countTimerTime.cancel();
+      _timers[index].isActive = false;
       await LocalNotification().showNotification();
       await _playSound();
     }
@@ -144,9 +182,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
-  // Future<void> _loadAudio() async {
-  //   await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
-  // }
 
   void _buttonDelay() async {
     _isDisabledButton = true;
@@ -199,6 +234,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         timerDateTime: DateTime.utc(0, 0, 0),
         firstTimerTime: DateTime.utc(0, 0, 0),
         saveDateString: '00',
+        pauseTime: DateTime.utc(0, 0, 0),
+        isActive: false,
       ),
     );
 
@@ -344,14 +381,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 class TimerInfomation {
   late Timer countTimerTime;
-  DateTime timerDateTime = DateTime.utc(0, 0, 0);
   late DateTime firstTimerTime;
+  late DateTime pauseTime;
+  late DateTime timerDateTime;
   String saveDateString = '00';
+  bool isActive = false;
+
+
+
 
   TimerInfomation({
     required this.countTimerTime,
     required this.timerDateTime,
     required this.firstTimerTime,
     required this.saveDateString,
+    required this.pauseTime,
+    required this.isActive,
   });
 }
