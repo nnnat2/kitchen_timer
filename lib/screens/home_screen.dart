@@ -161,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _playSound() async {
     if (_switchValue == true) {
-      await _audioPlayer.setAsset('assets/sounds/ktime10.mp3');
+      await _audioPlayer.setAsset('assets/sounds/ktimer.mp3');
       if (_isSoundPlaying) {
         await _audioPlayer.stop();
         await _audioPlayer.play();
