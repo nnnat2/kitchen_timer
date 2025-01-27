@@ -39,3 +39,6 @@ AndroidスマホにプリインストールされているGoogle製の「時計�
   flutter_slidableパッケージを使用してリストの削除に対応
   タイマーがバックグラウンドで動くように変更
 
+## ストア画像
+![Image](https://github.com/user-attachments/assets/45620452-357d-44a5-9800-4a663d8915b5)
+
